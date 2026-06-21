@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  dialup-isp:
+    image: dialup-isp
+    build: .
+    container_name: dialup-isp
+    restart: unless-stopped
+
+    privileged: true
+    network_mode: bridge
+
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+
+    sysctls:
+      net.ipv4.ip_forward: "1"
+
+    volumes:
+      - ./config:/app:ro
+
+    tmpfs:
+      - /run
+      - /var/run
+
