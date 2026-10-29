@@ -1,6 +1,6 @@
 # Configuring ATA Devices for Dial-Up Connections
 
-> **Purpose**: Configuration guide for building a retro Dial-Up network running at speeds up to 38400 baud using ATA (Analog Telephone Adapter) devices and modems.
+> **Purpose**: Configuration guide for building a retro Dial-Up network using ATA (Analog Telephone Adapter) devices and modems. Line speed is limited by V.34 (up to 33600 bps, ~21600 bps in practice over VoIP); the serial port (DTE) speed is configured separately (115200).
 
 ## Table of Contents
 - [Overview](#overview)
@@ -146,6 +146,9 @@ Network Settings:
 - Network Jitter Level = **low**
 - Jitter Buffer Adjustment = **no**
 
+SIP Settings:
+- SIP Port = **5060**
+
 Call Feature Settings:
 - Enable IP Dialing = **yes**
 
@@ -158,6 +161,9 @@ Proxy and Registration:
 Subscriber Information:
 - User ID = **101**
 - Use Auth ID = no
+
+Supplementary Service Subscription: → **SET ALL to NO** (Call Forward, Call Waiting, Call Transfer, DND, etc.)
+> **Why**: Call Waiting tones, voicemail indicators and Caller ID FSK bursts can be injected into the line in the middle of a session and break the modem link.
 
 Audio Configuration table
 
@@ -186,6 +192,9 @@ Dial Plan:
 #### Voice / Line 2
 Almost all settings for `Line 2` are identical to `Voice / Line 1` except next settings below.
 
+SIP Settings:
+- SIP Port = **5061**
+
 Subscriber Information:
 - User ID = **102**
 - Use Auth ID = no
@@ -207,17 +216,23 @@ Subscriber Information:
 Almost all settings for `Voice` are identical to `SPA122` except next settings below.
 
 #### Voice / Line 1
+SIP Settings:
+- SIP Port = **5060**
+
 Subscriber Information:
 - User ID = **111**
 - Use Auth ID = no
 
 #### Voice / Line 2
+SIP Settings:
+- SIP Port = **5061**
+
 Subscriber Information:
 - User ID = **112**
 - Use Auth ID = no
 
 
-### LynkSys PAP2T
+### Linksys PAP2T
 #### Networking
 - Internet Settings:
   - DHCP = yes
@@ -234,7 +249,10 @@ Miscellaneous:
 #### Voice / Line 1
 Network Settings:
 - Network Jitter Level = **low**
-- Jitter Buffer Adjustment = **up and down** -> **!!! maybe missconfiguration, need test with  `disable`**
+- Jitter Buffer Adjustment = **disable**
+
+SIP Settings:
+- SIP Port = **5060**
 
 Proxy and Registration:
 - Register = **no**
@@ -245,6 +263,9 @@ Proxy and Registration:
 Subscriber Information:
 - User ID = **201**
 - Use Auth ID = no
+
+Supplementary Service Subscription: → **SET ALL to NO** (Call Forward, Call Waiting, Call Transfer, DND, etc.)
+> **Why**: Call Waiting tones, voicemail indicators and Caller ID FSK bursts can be injected into the line in the middle of a session and break the modem link.
 
 Audio Configuration table
 
@@ -269,6 +290,16 @@ Audio Configuration table
 Dial Plan:
 - Dial Plan: `(<101:101>S0<:@192.168.8.10:5060> | <102:102>S0<:@192.168.8.10:5061> | <111:111>S0<:@192.168.8.11:5060> | <112:112>S0<:@192.168.8.11:5061> | <201:201>S0<:@192.168.8.20:5060> | <202:202>S0<:@192.168.8.20:5061> | <211:211>S0<:@192.168.8.21:5060> | <212:212>S0<:@192.168.8.21:5061>)`
 - Enable IP Dialing: **yes**
+
+#### Voice / Line 2
+Almost all settings for `Line 2` are identical to `Voice / Line 1` except next settings below.
+
+SIP Settings:
+- SIP Port = **5061**
+
+Subscriber Information:
+- User ID = **202**
+- Use Auth ID = no
 
 ---
 
@@ -314,7 +345,7 @@ Dialed Number → Destination
 
 ## Critical Settings for Modem Compatibility
 
-To ensure reliable modem-to-modem communication at 38400 baud over VoIP, several settings **must** be configured correctly:
+To ensure reliable modem-to-modem communication over VoIP, several settings **must** be configured correctly:
 
 ### 1. Audio Codec Settings
 - **Preferred Codec = G711u** (uncompressed, 64 kbps)
@@ -347,9 +378,9 @@ To ensure reliable modem-to-modem communication at 38400 baud over VoIP, several
 
 ### 5. Jitter Buffer
 - **Network Jitter Level = low**
-- **Jitter Buffer Adjustment = no** (or disable on PAP2T)
+- **Jitter Buffer Adjustment = no** (SPA122/SPA112) / **disable** (PAP2T)
 
-> **Why**: Minimizes latency and prevents buffer-induced signal distortion.
+> **Why**: An adaptive buffer changes delay on the fly; V.34 sees this as symbol clock drift and retrains. Verified: switching PAP2T from `up and down` to `disable` noticeably improved stability.
 
 ### 6. SIP Registration
 - **Register = no**
@@ -357,6 +388,11 @@ To ensure reliable modem-to-modem communication at 38400 baud over VoIP, several
 - **Ans Call Without Reg = yes**
 
 > **Why**: Direct peer-to-peer SIP calling without a SIP server/registrar.
+
+### 7. Supplementary Services - MUST BE DISABLED
+- **Supplementary Service Subscription = no** on every line of every ATA (Call Waiting, MWI/VMWI, CID/CWCID, Three-Way, Transfer, Cfwd, DND, etc.)
+
+> **Why**: Call Waiting tones, voicemail indicators and Caller ID FSK bursts can be injected into the line in the middle of a session and break the modem link.
 
 ---
 
@@ -385,13 +421,13 @@ ping 192.168.8.20  # PAP2T
 
 ### 4. Check Audio Quality
 - Listen for clear carrier tones (no distortion, crackling, or warbling)
-- Modem handshake should complete within 20-30 seconds
+- Modem handshake normally takes 30-40 seconds for V.34
 - Connection should be stable without frequent retrains
 
 ### 5. PPP Connection Test
 ```bash
 # On server, monitor mgetty logs:
-tail -f /var/log/mgetty/mgetty.log.ttyUSB0
+tail -f /var/log/mgetty/mg_ttyUSB0.log
 
 # Successful connection shows:
 # - Modem CONNECT at 38400
@@ -444,7 +480,7 @@ AT&F           # Factory reset
 ATE1           # Echo on
 ATX3           # Basic dialing
 AT&Q0          # Async mode
-ATS0=1         # Auto-answer on 1 ring (ISP side)
+ATS0=0         # Do NOT auto-answer on ISP side: mgetty counts RINGs and sends ATA itself
 ```
 
 ---
@@ -456,9 +492,10 @@ ATS0=1         # Auto-answer on 1 ring (ISP side)
 1. Check for network packet loss: `ping -c 100 192.168.8.10`
 2. Verify no QoS/traffic shaping on isolated router
 3. Ensure sufficient bandwidth (minimum 100 kbps per line)
-4. Check **Jitter Buffer Adjustment = no**
+4. Check **Jitter Buffer Adjustment = no** (SPA) / **disable** (PAP2T)
 5. Disable any SIP ALG (Application Layer Gateway) on router
 6. Monitor server-side PPP logs for errors
+7. Verify all Supplementary Services are disabled (Call Waiting, MWI/VMWI, CID)
 
 ---
 
@@ -468,12 +505,11 @@ ATS0=1         # Auto-answer on 1 ring (ISP side)
 **Solutions**:
 1. Test different number combinations (different Cisco device)
 2. Verify cable quality (use short, high-quality RJ11 cables)
-3. Check modem supports 38400 baud (V.32bis minimum)
-4. Try disabling modem error correction: `AT&M0`
+3. Check the negotiated modulation: V.32bis = 14400, V.34 = up to 33600. Lower it explicitly to find a stable rate (`AT+MS=?` lists supported modes)
+4. Error correction/compression can be disabled for tests only (chipset dependent: `AT&M0` on US Robotics, `AT\N0` on most Rockwell/Conexant). Keep it enabled in normal use: it hides line errors from PPP
 5. **Known limitation**: PAP2T lacks "Modem Line" option, may limit speeds
-6. Check `Jitter Buffer Adjustment` on PAP2T (test with **disable** instead of **up and down**)
+6. Verify `Jitter Buffer Adjustment = disable` on PAP2T
 
-> **Note on PAP2T**: The configuration shows `Jitter Buffer Adjustment = up and down` with a note about possible misconfiguration. Test with `disable` for better modem performance.
 
 ---
 
