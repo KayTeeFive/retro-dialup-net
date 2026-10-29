@@ -1,0 +1,35 @@
+logfile /var/log/pppd_ttyUSB0.log
+debug
+
+# DNS servers for the client
+ms-dns 8.8.8.8
+ms-dns 8.8.4.4
+
+# Static IP addresses
+192.168.127.1:192.168.127.10
+#netmask 255.255.255.0
+
+# Authentication requirements
+auth
++pap
+# For debug only
+#show-password
+
+# Channel parameters
+#local
+crtscts
+lock
+noccp
+#proxyarp
+noipx
+lcp-echo-interval 20
+lcp-echo-failure 3
+
+# Add default route via PPP interface
+#defaultroute
+#replacedefaultroute
+
+#require-mschap-v2
+#refuse-pap
+#refuse-chap
+
