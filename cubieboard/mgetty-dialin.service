@@ -1,0 +1,15 @@
+# /etc/systemd/system/mgetty-dialin.service
+[Unit]
+Description=mgetty dial-in loops (ttyUSB0, ttyUSB1)
+After=ppp-nat.service
+Wants=ppp-nat.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/start_mgetty.sh ttyUSB0 ttyUSB1
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

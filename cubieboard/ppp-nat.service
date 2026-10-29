@@ -1,0 +1,12 @@
+# /etc/systemd/system/ppp-nat.service
+[Unit]
+Description=IP forwarding and NAT for dial-up PPP clients
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/ppp_nat.sh
+
+[Install]
+WantedBy=multi-user.target

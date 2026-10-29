@@ -1,0 +1,10 @@
+/var/log/mgetty/*.log
+/var/log/pppd_*.log
+{
+    size 5M
+    rotate 1
+    copytruncate
+    missingok
+    notifempty
+    compress
+}
