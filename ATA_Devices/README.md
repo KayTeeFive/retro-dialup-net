@@ -426,11 +426,13 @@ ping 192.168.8.20  # PAP2T
 
 ### 5. PPP Connection Test
 ```bash
-# On server, monitor mgetty logs:
-tail -f /var/log/mgetty/mg_ttyUSB0.log
+# On server, monitor 'mgetty' an 'ppp' logs:
+tail -f /var/log/mgetty/*.log /var/log/pppd_*.log
 
 # Successful connection shows:
-# - Modem CONNECT at 38400
+# - Modem CONNECT: CONNECT=115200/V34b 31200/V44
+#       where 115200 is the serial port speed, V34b is the modem protocol, 
+#         and 31200 is the negotiated line speed (31200 excellent result), V.44 is the modulation scheme
 # - PPP negotiation
 # - IP address assignment
 ```
@@ -446,7 +448,7 @@ tail -f /var/log/mgetty/mg_ttyUSB0.log
 1. Check physical phone cable connections (RJ11)
 2. Verify ATA device has power and network connectivity
 3. Check ATA web interface - ensure Line 1/2 is enabled
-4. Verify FXS Port Impedance = 600+2.16uF
+4. Verify FXS Port Impedance = 600 or 600+2.16uF
 
 ---
 
@@ -500,7 +502,11 @@ ATS0=0         # Do NOT auto-answer on ISP side: mgetty counts RINGs and sends A
 ---
 
 ### Issue: Low Connection Speed
-**Symptoms**: Modem connects at speeds lower than 38400 baud
+**Symptoms**: Modem connects at 19200 bps or lower
+
+**Expected speeds**:
+- Typical: 21600, 24000, 26400, 28800 or 31200 bps
+- Ideal conditions: 33600 bps (V.34 maximum)
 
 **Solutions**:
 1. Test different number combinations (different Cisco device)
