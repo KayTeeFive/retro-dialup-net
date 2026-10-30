@@ -437,6 +437,51 @@ tail -f /var/log/mgetty/*.log /var/log/pppd_*.log
 # - IP address assignment
 ```
 
+## Call redirection
+
+Amazingly, the ATA devices can redirect calls to any SIP endpoint, including other ATA devices or softphones. This allows for flexible testing scenarios.
+
+You can setup Cisco/Linksys ATA devices to route calls to any IP address and port, enabling you to test different configurations without changing the physical setup.
+
+Preconditions for call redirection:
+- ATA #1 - server side (SPA122 or SPA112 with modem connected to mgetty/pppd):
+  - Line 1: 101
+  - Line 2: 102
+- ATA #2 - server side (SPA122 or SPA112 with modem connected to mgetty/pppd):
+  - Line 1: 111
+  - Line 2: 112
+- ATA #3 - client side (PAP2T with modem connected to client PC):
+  - Line 1: 201
+  - Line 2: 202
+- DialPlan on each ATA device: → `(<101:101>S0<:@192.168.8.10:5060> | <102:102>S0<:@192.168.8.10:5061> | <111:111>S0<:@192.168.8.11:5060> | <112:112>S0<:@192.168.8.11:5061> | <201:201>S0<:@192.168.8.20:5060> | <202:202>S0<:@192.168.8.20:5061> | <211:211>S0<:@192.168.8.21:5060> | <212:212>S0<:@192.168.8.21:5061>)` 
+
+Requirements:
+1. You need correctly configured Dial Plan on each ATA device. The Dial Plan defines how incoming calls are routed based on the dialed number.
+2. Enable Call Forwarding on each ATA on each Line 1 and Line 2 (The ATA will forward calls to the specified SIP endpoint if the line is busy or not answered):
+   - Cfwd No Ans Serv: yes
+   - Cfwd Busy Serv: yes
+3. ATA #1 Voice/User tabs:
+   - User 1 → `Cfwd No Ans Dest: 102`  → redirects to next ATA #1 port
+   - User 1 → `Cfwd Busy Dest: 102`    → redirects to next ATA #1 port
+   - User 2 → `Cfwd No Ans Dest: 111`  → redirects to ATA #2 port
+   - User 2 → `Cfwd Busy Dest: 111`    → redirects to ATA #2 port
+4. ATA #2 Voice/User tabs:
+   - User 1 → `Cfwd No Ans Dest: 112`  → redirects to next ATA #2 port
+   - User 1 → `Cfwd Busy Dest: 112`    → redirects to next ATA #2 port
+   - User 2 → `Cfwd No Ans Dest: 101`  → redirects back to ATA #1
+   - User 2 → `Cfwd Busy Dest: 101`    → redirects back to ATA #1
+5. Test:
+   - Connect 2 modems to ATA #1 Line 1 and ATA #2 Line 2 (it will make 101 `Busy` and 102 with 111 to be `No ans`)
+   - Establish connection with ATA #1 Line 1 (101) from PC1
+   - Try to establish connection with ATA #1 Line 1 (101) from PC2 → ...
+       → it will be redirected to ATA #1 Line 2 (102) → then to ATA #2 Line 1 (111) → ...
+       → then to ATA #2 Line 2 (112) → ...
+       → at that moment PC2 will be connected to ATA #2 Line 2 (112) and PC1 will be connected to ATA #1 Line 1 (101) → ...
+       → both PC1 and PC2 will be connected to the server side.
+
+> Note: We don't need to setup call redirection on the client side (PAP2T) because it is only used to initiate calls to the server side.
+> The server side handles the call routing and redirection.
+
 ---
 
 ## Troubleshooting
