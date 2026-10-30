@@ -478,6 +478,7 @@ Requirements:
        → then to ATA #2 Line 2 (112) → ...
        → at that moment PC2 will be connected to ATA #2 Line 2 (112) and PC1 will be connected to ATA #1 Line 1 (101) → ...
        → both PC1 and PC2 will be connected to the server side.
+6. Tune the `Cfwd No Ans Delay` on each ATA device to control how long it waits before redirecting the call. My recommendation: 5 sec.
 
 > Note: We don't need to setup call redirection on the client side (PAP2T) because it is only used to initiate calls to the server side.
 > The server side handles the call routing and redirection.
